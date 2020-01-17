@@ -10,7 +10,7 @@ const path = require('path');
 const colors = require('colors'); 
 const mkdirs = require('jm-mkdirs');
 const exec = require('child_process').exec;
-class CopyAndPushPlugin {
+class WebpackJpushPublishPlugin {
     constructor(options) {
         this.options = Object.assign({},options);
     }

@@ -1,21 +1,17 @@
 {
-  "name": "element-ui",
-  "version": "2.12.0",
-  "description": "A Component Library for Vue.js.",
+  "name": "webpack-jpush-publish-plugin",
+  "version": "0.0.2",
+  "description": "极光推送前端编译打包发布部署辅助工具",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/1degrees/webpack-jpush-publish-plugin.git"
   },
-  "homepage": "http://element.eleme.io",
   "keywords": [
-    "jpush",
-    "publish"
+    "jpush-publish"
   ],
-  "bugs": {
-    "url": "https://github.com/ElemeFE/element/issues"
-  },
   "dependencies": {
     "colors": "^1.4.0",
     "jm-mkdirs": "0.0.1"
