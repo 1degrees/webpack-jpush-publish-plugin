@@ -208,4 +208,4 @@ class WebpackJpushPublishPlugin {
         }
     }
 }
-module.exports = CopyAndPushPlugin;
+module.exports = WebpackJpushPublishPlugin;
