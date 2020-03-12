@@ -101,26 +101,6 @@ class WebpackJpushPublishPlugin {
         }
 
         /**
-         * 清空文件夹
-         * @param {*} path 清空路径
-         */
-        const _delDir = (path) => {
-            let files = [];
-            if(fs.existsSync(path)){
-                files = fs.readdirSync(path);
-                files.forEach((file, index) => {
-                    let curPath = path + "/" + file;
-                    if(fs.statSync(curPath).isDirectory()){
-                        _delDir(curPath); //递归删除文件夹
-                    } else {
-                        fs.unlinkSync(curPath); //删除文件
-                    }
-                });
-                fs.rmdirSync(path);
-            }
-        }
-
-        /**
          * 拷贝文件到publish文件加
          * @param {*} compilation webpacke编译类
          * @param {*} callback  插件任务完成后的回调
@@ -193,7 +173,27 @@ class WebpackJpushPublishPlugin {
                     console.log('\n', colors.green('所有HTML成功移入发布项目'), '\n');
                 }
                 callback(err);
-              };
+            };
+
+            /**
+             * 清空文件夹
+             * @param {*} path 清空路径
+             */
+            const _delDir = (path) => {
+                let files = [];
+                if(fs.existsSync(path)){
+                    files = fs.readdirSync(path);
+                    files.forEach((file, index) => {
+                        let curPath = path + "/" + file;
+                        if(fs.statSync(curPath).isDirectory()){
+                            _delDir(curPath); //递归删除文件夹
+                        } else {
+                            fs.unlinkSync(curPath); //删除文件
+                        }
+                    });
+                    fs.rmdirSync(path);
+                }
+            }
 
             // 清空文件夹
             _delDir(path.resolve(root + dir));
