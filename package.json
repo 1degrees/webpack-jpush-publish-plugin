@@ -1,6 +1,6 @@
 {
   "name": "webpack-jpush-publish-plugin",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "极光推送前端编译打包发布部署辅助工具",
   "main": "index.js",
   "scripts": {

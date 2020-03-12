@@ -24,7 +24,8 @@ class WebpackJpushPublishPlugin {
             gitLab,
             env,
         } = this.options;
-        
+        let root = path.resolve(__dirname).replace(/node_modules.*$/,'');
+
         /**
          * git切换分支,提交操作
          * @param {*} compilation webpacke编译类
@@ -40,10 +41,10 @@ class WebpackJpushPublishPlugin {
          * @param {*} callback  插件任务完成后的回调
          */
         const gitClone = (compilation, callback) => {
-            const publish = path.resolve(__dirname, '../publish')
+            const publish = path.resolve(root, 'publish')
             if(!fs.existsSync(publish)){
-                exec('git clone ' + gitLab + ' publish', {
-                    cwd: path.resolve(__dirname, '../')
+                exec(`git clone ${gitLab} publish`, {
+                    cwd: root
                 }, function (error, stdout, stderr) {
                     gitCommit(compilation, callback);
                 })
@@ -58,19 +59,20 @@ class WebpackJpushPublishPlugin {
          * @param {*} callback  插件任务完成后的回调
          */
         const gitCommit = (compilation, callback) => {
-            exec('git checkout ' + env + ' && git pull origin ' + env , {
-                cwd: path.resolve(__dirname, '../publish')
-            }, function (error, stdout, stderr) {
-                if (error) {
-                    console.log(colors.red.underline(error));
-                    callback();
-                    return
-                } else {
-                    console.log(colors.yellow.underline('当前分支:' + env));
-                    //分支切换完成，移动复制打包代码
-                    copyFiles(compilation, () => {
-                        exec("git add . && git commit -a -m 'auto-" + env + "-git-" + version + "'", {
-                                cwd: path.resolve(__dirname, '../publish')
+            let cwdPath = path.resolve(root, 'publish');
+            //分支切换完成，移动复制打包代码
+            copyFiles(compilation, () => {
+                exec(`git fetch origin ${env} && git checkout ${env} && git merge FETCH_HEAD`, {
+                    cwd: cwdPath
+                }, function (error, stdout, stderr) {
+                    if (error) {
+                        console.log(colors.red.underline(error));
+                        callback();
+                        return
+                    } else {
+                        console.log(colors.yellow.underline('当前分支:' + env));
+                        exec(`git add . && git commit -m 'auto-${env}-git-${version}'`, {
+                            cwd: cwdPath
                         }, function (error, stdout, stderr) {
                             if (error) {
                                 console.log(colors.red.underline(error));
@@ -79,7 +81,7 @@ class WebpackJpushPublishPlugin {
                             } else {
                                 console.log(colors.green('commit成功'));
                                 exec("git push origin " + env, {
-                                    cwd: path.resolve(__dirname, '../publish')
+                                    cwd: cwdPath
                                 }, function (error, stdout, stderr) {
                                     if (error) {
                                         console.log(colors.red.underline(error));
@@ -92,9 +94,30 @@ class WebpackJpushPublishPlugin {
                                 })
                             }
                         })
-                    }) 
-                }
-            })
+                    
+                    }
+                })
+            }) 
+        }
+
+        /**
+         * 清空文件夹
+         * @param {*} path 清空路径
+         */
+        const _delDir = (path) => {
+            let files = [];
+            if(fs.existsSync(path)){
+                files = fs.readdirSync(path);
+                files.forEach((file, index) => {
+                    let curPath = path + "/" + file;
+                    if(fs.statSync(curPath).isDirectory()){
+                        _delDir(curPath); //递归删除文件夹
+                    } else {
+                        fs.unlinkSync(curPath); //删除文件
+                    }
+                });
+                fs.rmdirSync(path);
+            }
         }
 
         /**
@@ -108,32 +131,14 @@ class WebpackJpushPublishPlugin {
             let _files = filesNames.filter(e => filter.test(e));
             let _failedFiles = [];
             let _retryCount = 0;
-            
-            // 删除文件函数
-            const _delDir = (path) => {
-                let files = [];
-                if(fs.existsSync(path)){
-                    files = fs.readdirSync(path);
-                    files.forEach((file, index) => {
-                        let curPath = path + "/" + file;
-                        if(fs.statSync(curPath).isDirectory()){
-                            _delDir(curPath); //递归删除文件夹
-                        } else {
-                            fs.unlinkSync(curPath); //删除文件
-                        }
-                    });
-                    fs.rmdirSync(path);
-                }
-            }
-
             // 单个文件移动复制函数
             const _copyFile = (name) => {
                 return new Promise((resolve, reject) => {
                     let names = name.split(/[\\\/]/);
                     names.pop();
-                    mkdirs.sync(path.resolve(__dirname, '../' + dir + names.join('/')));
+                    mkdirs.sync(path.resolve(root + dir + names.join('/')));
                     fs.writeFile(
-                        path.resolve(__dirname, '../' + dir + name), 
+                        path.resolve(root + dir + name), 
                         assets[name]['source'](), 'utf8',
                         err => {
                             let fi = _failedFiles.indexOf(name);
@@ -191,7 +196,7 @@ class WebpackJpushPublishPlugin {
               };
 
             // 清空文件夹
-            _delDir(path.resolve(__dirname, '../' + dir.replace(/\/$/,'')));
+            _delDir(path.resolve(root + dir));
             
             // 拷贝进程开始
             _cpoyProcess().then((rs) => {
@@ -200,7 +205,6 @@ class WebpackJpushPublishPlugin {
                 _finish() 
             }, _finish)
         }
-
         if (compiler.hooks) {   // For webpack >= 4
             compiler.hooks.afterEmit.tapAsync('gitOperate', publishProject);
         } else {                // For webpack < 4
